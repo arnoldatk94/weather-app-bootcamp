@@ -24,6 +24,9 @@ class App extends React.Component {
       cityInputValue: "",
       userQueried: false,
       extractedForecast: [],
+      currDesc: "",
+      currCity: "",
+      currTemp: 0,
     };
   }
 
@@ -61,7 +64,7 @@ class App extends React.Component {
       )
       .then((response) => {
         const { data: weatherData } = response;
-        // console.log(weatherData.list);
+        console.log(weatherData);
         let tempArray = [];
         for (let i = 0; i < weatherData.list.length; i += 8) {
           tempArray.push({
@@ -75,6 +78,9 @@ class App extends React.Component {
         this.setState({
           extractedForecast: tempArray,
           userQueried: true,
+          currDesc: weatherData.list[0].weather[0].description,
+          currCity: weatherData.city.name,
+          currTemp: weatherData.list[0].main.temp,
         });
       });
   };
@@ -106,6 +112,9 @@ class App extends React.Component {
             <div id="chart">
               {this.state.userQueried ? (
                 <>
+                  <h3>Country: {this.state.currCity}</h3>
+                  <h3>Current Temperature: {this.state.currTemp}°C</h3>
+                  <h3>Current Weather: {this.state.currDesc}</h3>
                   <h6>Temperature for the next 5 days</h6>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
