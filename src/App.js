@@ -2,6 +2,18 @@ import React, { Fragment } from "react";
 import logo from "./logo.png";
 import "./App.css";
 import axios from "axios";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Form, Button, Container, Row, Col } from "react-bootstrap";
 
 const OPEN_WEATHER_API_KEY = "ef861d8aed0dd94eb27db248a1387c7c";
 
@@ -10,13 +22,8 @@ class App extends React.Component {
     super(props);
     this.state = {
       cityInputValue: "",
-      time06: [],
-      time09: [],
-      time12: [],
-      time15: [],
-      time18: [],
-      time21: [],
       userQueried: false,
+      extractedForecast: [],
     };
   }
 
@@ -27,6 +34,10 @@ class App extends React.Component {
     this.setState({
       [name]: value,
     });
+  };
+
+  reducer = (acc, cur) => {
+    return { ...acc, [cur.id]: cur };
   };
 
   handleSubmit = (event) => {
@@ -50,87 +61,82 @@ class App extends React.Component {
       )
       .then((response) => {
         const { data: weatherData } = response;
+        // console.log(weatherData.list);
+        let tempArray = [];
+        for (let i = 0; i < weatherData.list.length; i += 8) {
+          tempArray.push({
+            date: weatherData.list[i].dt_txt.split(" ")[0],
+            high: weatherData.list[i].main.temp_max,
+            low: weatherData.list[i].main.temp_min,
+            weather: weatherData.list[i].weather[0].description,
+          });
+        }
 
         this.setState({
+          extractedForecast: tempArray,
           userQueried: true,
-          time06: [
-            weatherData.list[0].main.temp,
-            weatherData.list[0].weather[0].description,
-          ],
-          time09: [
-            weatherData.list[1].main.temp,
-            weatherData.list[1].weather[0].description,
-          ],
-          time12: [
-            weatherData.list[2].main.temp,
-            weatherData.list[2].weather[0].description,
-          ],
-          time15: [
-            weatherData.list[3].main.temp,
-            weatherData.list[3].weather[0].description,
-          ],
-          time18: [
-            weatherData.list[4].main.temp,
-            weatherData.list[4].weather[0].description,
-          ],
-          time21: [
-            weatherData.list[5].main.temp,
-            weatherData.list[5].weather[0].description,
-          ],
         });
       });
   };
 
   render() {
+    let forecastDisplay = [...this.state.extractedForecast];
+    console.log(forecastDisplay);
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <form onSubmit={this.handleSubmit}>
-            <input
-              type="text"
-              name="cityInputValue"
-              value={this.state.cityInputValue}
-              onChange={this.handleChange}
-              placeholder="Type city to check forecast"
-            />
-            <button type="input" value="input" name="submit">
-              Submit
-            </button>
-          </form>
 
-          {this.state.userQueried ? (
-            <table>
-              <thead>
-                <Fragment>
-                  <tr>
-                    {"6am: "}
-                    {this.state.time06[0]}°C--{this.state.time06[1]}
-                  </tr>
-                  <tr>
-                    {"9am: "}
-                    {this.state.time09[0]}°C--{this.state.time09[1]}
-                  </tr>
-                  <tr>
-                    {"12pm: "}
-                    {this.state.time12[0]}°C--{this.state.time12[1]}
-                  </tr>
-                  <tr>
-                    {"3pm: "}
-                    {this.state.time15[0]}°C--{this.state.time15[1]}
-                  </tr>
-                  <tr>
-                    {"6pm: "}
-                    {this.state.time18[0]}°C--{this.state.time18[1]}
-                  </tr>
-                  <tr>
-                    {"9pm: "}
-                    {this.state.time21[0]}°C--{this.state.time21[1]}
-                  </tr>
-                </Fragment>
-              </thead>
-            </table>
-          ) : null}
+          <Form onSubmit={this.handleSubmit}>
+            <Form.Group>
+              <Form.Control
+                type="text"
+                name="cityInputValue"
+                value={this.state.cityInputValue}
+                placeholder="Enter city e.g. Singapore"
+                onChange={this.handleChange}
+              />
+              <Button variant="primary" type="submit">
+                Submit
+              </Button>
+            </Form.Group>
+          </Form>
+
+          <Fragment>
+            <div id="chart">
+              {this.state.userQueried ? (
+                <>
+                  <h6>Temperature for the next 5 days</h6>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      width={500}
+                      height={300}
+                      data={forecastDisplay}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="2 2" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="high"
+                        stroke="#fc0303"
+                        activeDot={{ r: 8 }}
+                      />
+                      <Line type="monotone" dataKey="low" stroke="#03e8fc" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </>
+              ) : null}
+            </div>
+          </Fragment>
         </header>
       </div>
     );
